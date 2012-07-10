@@ -2,7 +2,7 @@
 //      EHTERSHIELD_H library for Arduino etherShield
 //      Copyright (c) 2008 Xing Yu.  All right reserved. (this is LGPL v2.1)
 // It is however derived from the enc28j60 and ip code (which is GPL v2)
-//      Author: Pascal Stang 
+//      Author: Pascal Stang
 //      Modified by: Guido Socher
 //      DHCP code: Andrew Lindsay
 // Hence: GPL V2
@@ -11,7 +11,6 @@
 
 #ifndef EtherCard_h
 #define EtherCard_h
-
 
 #if ARDUINO >= 100
   #include <Arduino.h> // Arduino 1.0
@@ -23,99 +22,24 @@
   #define WRITE_RETURN
 #endif
 
+#include "Stash.h"
 #include <avr/pgmspace.h>
 #include "enc28j60.h"
 #include "net.h"
-
-typedef struct {
-  uint8_t count;     // number of allocated pages
-  uint8_t first;     // first allocated page
-  uint8_t last;      // last allocated page
-} StashHeader;
-
-class Stash : public /*Stream*/ Print, private StashHeader {
-  uint8_t curr;      // current page
-  uint8_t offs;      // current offset in page
-  
-  typedef struct {
-    union {
-      uint8_t bytes[64];
-      uint16_t words[32];
-      struct {
-        StashHeader head;
-        uint8_t filler[59];
-        uint8_t tail;
-        uint8_t next;
-      };
-    };
-    uint8_t bnum;
-  } Block;
-
-  static uint8_t allocBlock ();
-  static void freeBlock (uint8_t block);
-  static uint8_t fetchByte (uint8_t blk, uint8_t off);
-
-  static Block bufs[2];
-  static uint8_t map[256/8];
-
-public:
-  static void initMap (uint8_t last);
-  static void load (uint8_t idx, uint8_t blk);
-  static uint8_t freeCount ();
-
-  Stash () : curr (0) { first = 0; }
-  Stash (uint8_t fd) { open(fd); }
-  
-  uint8_t create ();
-  uint8_t open (uint8_t blk);
-  void save ();
-  void release ();
-
-  void put (char c);
-  char get ();
-  uint16_t size ();
-
-  virtual WRITE_RESULT write(uint8_t b) { put(b); WRITE_RETURN }
-  
-  // virtual int available() {
-  //   if (curr != last)
-  //     return 1;
-  //   load(1, last);
-  //   return offs < bufs[1].tail;
-  // }
-  // virtual int read() {
-  //   return available() ? get() : -1;      
-  // }
-  // virtual int peek() {
-  //   return available() ? bufs[1].bytes[offs] : -1;      
-  // }
-  // virtual void flush() {
-  //   curr = last;
-  //   offs = 63;
-  // }
-  
-  static void prepare (PGM_P fmt, ...);
-  static uint16_t length ();
-  static void extract (uint16_t offset, uint16_t count, void* buf);
-  static void cleanup ();
-
-  friend void dumpBlock (const char* msg, uint8_t idx); // optional
-  friend void dumpStash (const char* msg, void* ptr);   // optional
-};
 
 class BufferFiller : public Print {
   uint8_t *start, *ptr;
 public:
   BufferFiller () {}
   BufferFiller (uint8_t* buf) : start (buf), ptr (buf) {}
-      
+
   void emit_p (PGM_P fmt, ...);
   void emit_raw (const char* s, uint16_t n) { memcpy(ptr, s, n); ptr += n; }
   void emit_raw_p (PGM_P p, uint16_t n) { memcpy_P(ptr, p, n); ptr += n; }
-  
+
   uint8_t* buffer () const { return start; }
   uint16_t position () const { return ptr - start; }
-  
+
   virtual WRITE_RESULT write (uint8_t v) { *ptr++ = v; WRITE_RETURN }
 };
 
@@ -131,7 +55,7 @@ public:
   static uint16_t hisport;  // tcp port to connect to (default 80)
   // EtherCard.cpp
   static uint8_t begin (const uint16_t size, const uint8_t* macaddr,
-                        uint8_t csPin =8);  
+                        uint8_t csPin =8);
   static bool staticSetup (const uint8_t* my_ip =0,
                             const uint8_t* gw_ip =0,
                              const uint8_t* dns_ip =0);
